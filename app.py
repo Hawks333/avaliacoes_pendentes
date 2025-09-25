@@ -36,9 +36,23 @@ if uploaded_file:
         if colunas_avaliativa:
             st.write("Colunas encontradas para a avaliativa:", colunas_avaliativa)
             
+            # Lista de colunas adicionais que queremos incluir
+            colunas_adicionais = []
+            colunas_padrao = ["DR", "Polo", "Nome"]
+            
+            # Verifica quais colunas adicionais existem no DataFrame
+            for coluna in ["Etapa", "Sala", "Data último acesso"]:
+                if coluna in df.columns:
+                    colunas_adicionais.append(coluna)
+                else:
+                    st.warning(f"Coluna '{coluna}' não encontrada no DataFrame.")
+            
+            # Combina todas as colunas que vamos usar
+            todas_colunas = colunas_padrao + colunas_adicionais + colunas_avaliativa
+            
             # Filtra alunos que têm pelo menos um "--" em qualquer coluna da avaliativa
             mask = df[colunas_avaliativa].apply(lambda x: x.astype(str).str.contains("--")).any(axis=1)
-            alunos_com_pendencia = df[mask][["DR", "Polo", "Nome"] + colunas_avaliativa].copy()
+            alunos_com_pendencia = df[mask][todas_colunas].copy()
             
             # Identifica as áreas com pendência para cada aluno
             def identificar_areas_pendentes(row):
@@ -62,8 +76,8 @@ if uploaded_file:
             if not alunos_com_pendencia.empty:
                 st.subheader("Estudantes com resultado pendente")
                 
-                # Mostra apenas as colunas principais + áreas pendentes
-                cols_to_show = ["DR", "Polo", "Nome", "Áreas com Pendência"]
+                # Mostra as colunas principais + áreas pendentes
+                cols_to_show = colunas_padrao + colunas_adicionais + ["Áreas com Pendência"]
                 df_to_show = alunos_com_pendencia[cols_to_show]
                 
                 # Aplicando cores alternadas
@@ -78,7 +92,8 @@ if uploaded_file:
                 # Criando Excel com cores
                 with pd.ExcelWriter(towrite, engine='openpyxl') as writer:
                     # Cria uma planilha resumida com informações principais
-                    resumo_download = alunos_com_pendencia[["DR", "Polo", "Nome", "Áreas com Pendência"]].copy()
+                    colunas_resumo = colunas_padrao + colunas_adicionais + ["Áreas com Pendência"]
+                    resumo_download = alunos_com_pendencia[colunas_resumo].copy()
                     resumo_download.to_excel(writer, index=False, sheet_name="Pendências Resumidas")
                     
                     # Aplicando cores alternadas no Excel
@@ -91,6 +106,13 @@ if uploaded_file:
                     
                     # Cria uma segunda aba com detalhes completos
                     alunos_com_pendencia.to_excel(writer, index=False, sheet_name="Detalhes Completos")
+                    
+                    # Aplica formatação na aba de detalhes completos também
+                    ws_detalhes = writer.sheets["Detalhes Completos"]
+                    for idx, row in enumerate(ws_detalhes.iter_rows(min_row=2, max_row=ws_detalhes.max_row), start=0):
+                        if idx % 2 == 0:
+                            for cell in row:
+                                cell.fill = fill
                 
                 towrite.seek(0)
                 
@@ -106,6 +128,15 @@ if uploaded_file:
                 total_pendencias = alunos_com_pendencia["Áreas com Pendência"].str.split(", ").explode().value_counts()
                 st.write("Quantidade de pendências por área:")
                 st.dataframe(total_pendencias)
+                
+                # Estatísticas adicionais por etapa, sala, etc.
+                if "Etapa" in df.columns:
+                    st.write("Pendências por Etapa:")
+                    st.dataframe(alunos_com_pendencia["Etapa"].value_counts())
+                
+                if "Sala" in df.columns:
+                    st.write("Pendências por Sala:")
+                    st.dataframe(alunos_com_pendencia["Sala"].value_counts())
                 
             else:
                 st.info("Nenhum aluno com resultado pendente encontrado.")
