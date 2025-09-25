@@ -27,14 +27,21 @@ if uploaded_file:
         # Seleção da avaliativa
         avaliativa = st.selectbox("Selecione a Avaliativa", [1, 2, 3, 4])
 
-        # Procurar todas as colunas relacionadas à avaliativa
+        # Procurar todas as colunas relacionadas à avaliativa, ignorando tentativas
         colunas_avaliativa = []
+        colunas_ignorar = []
+        
         for col in df.columns:
             if f"avaliativa {avaliativa}" in col.lower():
-                colunas_avaliativa.append(col)
+                if "tentativas" in col.lower():
+                    colunas_ignorar.append(col)
+                else:
+                    colunas_avaliativa.append(col)
 
         if colunas_avaliativa:
             st.write("Colunas encontradas para a avaliativa:", colunas_avaliativa)
+            if colunas_ignorar:
+                st.write("Colunas ignoradas (contêm 'Tentativas'):", colunas_ignorar)
             
             # Lista de colunas adicionais que queremos incluir
             colunas_adicionais = []
@@ -50,7 +57,7 @@ if uploaded_file:
             # Combina todas as colunas que vamos usar
             todas_colunas = colunas_padrao + colunas_adicionais + colunas_avaliativa
             
-            # Filtra alunos que têm pelo menos um "--" em qualquer coluna da avaliativa
+            # Filtra alunos que têm pelo menos um "--" em qualquer coluna da avaliativa (sem tentativas)
             mask = df[colunas_avaliativa].apply(lambda x: x.astype(str).str.contains("--")).any(axis=1)
             alunos_com_pendencia = df[mask][todas_colunas].copy()
             
@@ -61,7 +68,8 @@ if uploaded_file:
                     if str(row[col]).strip() == "--":
                         # Extrai o nome da área (remove a parte da avaliativa)
                         area = col.replace(f"Avaliativa {avaliativa}", "").strip()
-                        if area.startswith("-"):
+                        # Remove caracteres especiais no início
+                        if area.startswith(('-', '–', '—', ':')):
                             area = area[1:].strip()
                         if area:  # Só adiciona se não for vazio
                             areas_pendentes.append(area)
@@ -141,4 +149,4 @@ if uploaded_file:
             else:
                 st.info("Nenhum aluno com resultado pendente encontrado.")
         else:
-            st.warning(f"Nenhuma coluna encontrada para a Avaliativa {avaliativa}.")
+            st.warning(f"Nenhuma coluna encontrada para a Avaliativa {avaliativa} (excluindo colunas de tentativas).")
