@@ -24,26 +24,21 @@ if uploaded_file:
         st.write("Pré-visualização da planilha:")
         st.dataframe(df.head())
         
-    # Seleção da avaliativa
-    avaliativa = st.selectbox("Selecione a Avaliativa", [1, 2, 3, 4])
+        # Seleção da avaliativa
+        avaliativa = st.selectbox("Selecione a Avaliativa", [1, 2, 3, 4])
 
-    # Procurar a coluna que contém o número da avaliativa
-    col_avaliativa = None
-    for col in df.columns:
-        if f"avaliativa {avaliativa}" in col.lower():
-            col_avaliativa = col
-            break
+        # Procurar a coluna que contém o número da avaliativa
+        col_avaliativa = None
+        for col in df.columns:
+            if f"avaliativa {avaliativa}" in col.lower():
+                col_avaliativa = col
+                break
 
-    if col_avaliativa:
-        alunos_sem_resultado = df[df[col_avaliativa] == "--"][["DR", "Polo", "Nome"]]
-        st.write("Coluna encontrada:", col_avaliativa)
-        st.dataframe(alunos_sem_resultado)
-    else:
-        st.warning(f"Nenhuma coluna encontrada para a Avaliativa {avaliativa}.")
+        if col_avaliativa:
+            st.write("Coluna encontrada:", col_avaliativa)
             
-            if col_name in df.columns:
             # Filtra alunos com resultado pendente
-            alunos_sem_resultado = df[df[col_name] == "--"][["DR", "Polo", "Nome"]]
+            alunos_sem_resultado = df[df[col_avaliativa] == "--"][["DR", "Polo", "Nome"]]
             
             if not alunos_sem_resultado.empty:
                 st.subheader("Estudantes com resultado pendente")
@@ -80,4 +75,4 @@ if uploaded_file:
             else:
                 st.info("Nenhum aluno com resultado pendente encontrado.")
         else:
-            st.warning(f"A coluna '{col_name}' não foi encontrada na planilha.")
+            st.warning(f"Nenhuma coluna encontrada para a Avaliativa {avaliativa}.")
