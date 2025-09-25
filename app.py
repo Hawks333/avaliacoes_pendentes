@@ -28,7 +28,7 @@ if uploaded_file:
         avaliativa = st.selectbox("Selecione a Avaliativa", [1, 2, 3, 4])
         
         # Nome da coluna que será filtrada
-        col_name = f"Atividade avaliativa {avaliativa}"
+        col_name = f"atividade avaliativa {avaliativa}"
         
         if col_name in df.columns:
             # Filtra alunos com resultado pendente
